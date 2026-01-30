@@ -58,5 +58,6 @@ async function bootstrap() {
   console.log(`Application is running on: http://localhost:${port}`);
   console.log(`CORS enabled for origins: ${allowedOrigins.join(', ')}`);
   console.log('🚀 Server Starting... (Excel Auto-Import DISABLED - MANUAL API MODE) 🚀');
+  console.log('--- FORCE DEPLOY: FIXED CORS CRASH ---');
 }
 bootstrap();
