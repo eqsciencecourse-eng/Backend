@@ -7,16 +7,22 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Enable CORS - ปรับให้รองรับ frontend URL
-  const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',')
-    : [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://192.168.3.88:3000',
-      'https://eqsciencecom.vercel.app',
-      'https://eq-app-72f5b.web.app',
-      'https://eq-app-72f5b.firebaseapp.com'
-    ];
+  // Enable CORS - ปรับให้รองรับ frontend URL
+  // Strategy: Merge Env Vars + Defaults to ensure safety
+  const defaultOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://192.168.3.88:3000',
+    'https://eqsciencecom.vercel.app',
+    'https://eq-app-72f5b.web.app',
+    'https://eq-app-72f5b.firebaseapp.com'
+  ];
+
+  const envOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+    : [];
+
+  const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])]; // Unique list
 
   app.enableCors({
     origin: allowedOrigins,
