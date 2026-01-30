@@ -13,8 +13,8 @@ export class SchoolsService implements OnModuleInit {
   ) { }
 
   async onModuleInit() {
-    // 1. Try to import from Excel first (Priority)
-    await this.importFromExcel();
+    // 1. Auto-import removed to prevent startup timeout. Use POST /schools/import instead.
+    // await this.importFromExcel();
 
     // 2. Fetch Universities from GitHub
     await this.fetchUniversities();
@@ -38,7 +38,7 @@ export class SchoolsService implements OnModuleInit {
       .exec();
   }
 
-  private async importFromExcel() {
+  async importFromExcel() {
     const cwd = process.cwd();
     console.log('Current Working Directory:', cwd);
 
@@ -128,13 +128,16 @@ export class SchoolsService implements OnModuleInit {
         console.log(
           `Successfully imported ${importedCount} schools from school65.xlsx (Bulk Optimization)`,
         );
+        return { success: true, count: importedCount, message: 'Import completed successfully' };
       } catch (error) {
         console.error('Error importing Excel file:', error);
+        return { success: false, error: error.message };
       }
     } else {
       console.log(
         'school65.xlsx not found. Skipping auto-import.',
       );
+      return { success: false, message: 'File school65.xlsx not found' };
     }
   }
 
