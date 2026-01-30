@@ -9,13 +9,20 @@ async function bootstrap() {
   // Enable CORS - ปรับให้รองรับ frontend URL
   const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost:3000', 'http://localhost:3001', 'http://192.168.3.88:3000'];
+    : [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://192.168.3.88:3000',
+      'https://eqsciencecom.vercel.app',
+      'https://eq-app-72f5b.web.app',
+      'https://eq-app-72f5b.firebaseapp.com'
+    ];
 
   app.enableCors({
-    origin: true, // Allow all origins for local development access
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   });
 
   // Increase payload limit
