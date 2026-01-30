@@ -1,0 +1,122 @@
+### Backend API Testing File
+### Use with REST Client extension in VS Code or similar tools
+
+@baseUrl = http://localhost:4001
+@token = YOUR_FIREBASE_ID_TOKEN_HERE
+
+### Health Check (if you add this endpoint)
+GET {{baseUrl}}/
+
+### ============================================
+### AUTHENTICATION REQUIRED ENDPOINTS
+### ============================================
+
+### Get User Profile
+GET {{baseUrl}}/users/profile
+Authorization: Bearer {{token}}
+
+### Get All Users (Admin Only)
+GET {{baseUrl}}/admin/users
+Authorization: Bearer {{token}}
+
+### Get Pending Teachers (Admin Only)
+GET {{baseUrl}}/admin/pending-teachers
+Authorization: Bearer {{token}}
+
+### Get Statistics (Admin Only)
+GET {{baseUrl}}/admin/stats
+Authorization: Bearer {{token}}
+
+### Get Students (Teacher/Admin Only)
+GET {{baseUrl}}/users/students
+Authorization: Bearer {{token}}
+
+### Get All Subjects
+GET {{baseUrl}}/subjects
+
+### ============================================
+### ADMIN ACTIONS
+### ============================================
+
+### Approve Teacher
+PATCH {{baseUrl}}/admin/approve-teacher/APPROVAL_TOKEN_HERE
+Authorization: Bearer {{token}}
+
+### Delete User
+DELETE {{baseUrl}}/admin/users/USER_ID_HERE
+Authorization: Bearer {{token}}
+
+### ============================================
+### TEACHER ACTIONS
+### ============================================
+
+### Register as Teacher
+POST {{baseUrl}}/users/register-teacher
+Authorization: Bearer {{token}}
+
+### ============================================
+### GRADES
+### ============================================
+
+### Get Grades (Teacher/Admin)
+GET {{baseUrl}}/grades
+Authorization: Bearer {{token}}
+
+### Create Grade (Teacher/Admin)
+POST {{baseUrl}}/grades
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "studentId": "student_firebase_uid",
+  "subject": "subject_name",
+  "knowledge": {
+    "exercise": 80,
+    "flowchart": 85
+  },
+  "skills": {
+    "reading": 75,
+    "planning": 80,
+    "equipmentUsage": 85,
+    "problemSolving": 90,
+    "improvement": 75,
+    "programming": 85,
+    "presentation": 80,
+    "attitude": 90
+  }
+}
+
+### ============================================
+### FILES
+### ============================================
+
+### Get Folders
+GET {{baseUrl}}/files/folders
+Authorization: Bearer {{token}}
+
+### Get User Files
+GET {{baseUrl}}/files/user/USER_ID_HERE
+Authorization: Bearer {{token}}
+
+### ============================================
+### SCHEDULES
+### ============================================
+
+### Get Teacher Schedule
+GET {{baseUrl}}/schedules/TEACHER_ID_HERE
+Authorization: Bearer {{token}}
+
+### Create/Update Schedule
+POST {{baseUrl}}/schedules
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "day": "monday",
+  "timeSlot": "10:00-12:00",
+  "subject": "subject_name"
+}
+
+
+
+
