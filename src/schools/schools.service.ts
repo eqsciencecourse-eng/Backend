@@ -44,24 +44,25 @@ export class SchoolsService implements OnModuleInit {
 
     // Potential paths to check
     const possiblePaths = [
-      'a:\\EqsciProject\\backend\\src\\schools\\school65.xlsx', // User's new location (Image)
-      path.join(cwd, 'src', 'schools', 'school65.xlsx'), // Source location
-      'a:\\EqsciProject\\backend\\school65.xlsx', // Previous location (Backup)
-      path.join(cwd, 'school65.xlsx'), // Root (Standard)
-      path.join(cwd, 'backend', 'school65.xlsx'), // Monorepo root
-      path.join(__dirname, '..', '..', '..', 'school65.xlsx'), // From dist/src/schools/
-      path.join(__dirname, 'school65.xlsx'), // Same dir (if copied to dist)
-      path.resolve('school65.xlsx'), // Resolve from current
+      'a:\\EqsciProject\\backend\\src\\schools\\school65.xlsx',
+      path.join(cwd, 'src', 'schools', 'school65.xlsx'),
+      'a:\\EqsciProject\\backend\\school65.xlsx',
+      path.join(cwd, 'school65.xlsx'),
+      path.join(cwd, 'backend', 'school65.xlsx'),
+      path.join(__dirname, '..', '..', '..', 'school65.xlsx'),
+      path.join(__dirname, 'school65.xlsx'),
+      path.resolve('school65.xlsx'),
     ];
 
     let filePath = '';
     console.log('--- Debugging School Import ---');
     for (const p of possiblePaths) {
-      const exists = fs.existsSync(p);
-      console.log(`Checking [${exists ? 'FOUND' : 'MISSING'}] path: ${p}`);
-      if (exists) {
+      if (fs.existsSync(p)) {
         filePath = p;
+        console.log(`Checking [FOUND] path: ${p}`);
         break;
+      } else {
+        // console.log(`Checking [MISSING] path: ${p}`); // Reduce noise
       }
     }
     console.log('-------------------------------');
@@ -69,34 +70,18 @@ export class SchoolsService implements OnModuleInit {
     if (filePath) {
       console.log('Found school65.xlsx at:', filePath);
       try {
+        console.log('Reading Excel file...');
         const workbook = xlsx.readFile(filePath);
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
-        const data = xlsx.utils.sheet_to_json(sheet) as unknown[]; // Explicitly cast to unknown[] first if needed, but likely it returns unknown[] already
+        const data = xlsx.utils.sheet_to_json(sheet) as any[];
 
         console.log(`Processing ${data.length} rows from Excel...`);
         let importedCount = 0;
+        const bulkOps = [];
+        const BATCH_SIZE = 1000;
 
-        // Interface for Row Data
-        interface SchoolRow {
-          'ชื่อสถานศึกษา'?: string;
-          'ชื่อโรงเรียน'?: string;
-          'โรงเรียน'?: string;
-          'สถานศึกษา'?: string;
-          'School Name'?: string;
-          'จังหวัด'?: string;
-          'Province'?: string;
-          'อำเภอ'?: string;
-          'District'?: string;
-          'ตำบล'?: string;
-          'Subdistrict'?: string;
-          'สังกัด'?: string;
-          [key: string]: unknown;
-        }
-
-        for (const rawRow of data) {
-          const row = rawRow as SchoolRow;
-          // Mapping columns based on common Thai OBEC headers
+        for (const row of data) {
           const name =
             row['ชื่อสถานศึกษา'] ||
             row['ชื่อโรงเรียน'] ||
@@ -110,29 +95,45 @@ export class SchoolsService implements OnModuleInit {
           const subdistrict = row['ตำบล'] || row['Subdistrict'] || 'ไม่ระบุ';
           const school_type = row['สังกัด'] || 'สพฐ.';
 
-          // Upsert to update existing or insert new
-          await this.schoolModel.updateOne(
-            { name: name },
-            {
-              name,
-              province,
-              district,
-              subdistrict,
-              school_type,
+          bulkOps.push({
+            updateOne: {
+              filter: { name: name },
+              update: {
+                $set: {
+                  name,
+                  province,
+                  district,
+                  subdistrict,
+                  school_type,
+                },
+              },
+              upsert: true,
             },
-            { upsert: true },
-          );
-          importedCount++;
+          });
+
+          if (bulkOps.length >= BATCH_SIZE) {
+            await this.schoolModel.bulkWrite(bulkOps);
+            importedCount += bulkOps.length;
+            console.log(`Imported ${importedCount}/${data.length} schools...`);
+            bulkOps.length = 0; // Clear array
+          }
         }
+
+        // Process remaining
+        if (bulkOps.length > 0) {
+          await this.schoolModel.bulkWrite(bulkOps);
+          importedCount += bulkOps.length;
+        }
+
         console.log(
-          `Successfully imported ${importedCount} schools from school65.xlsx`,
+          `Successfully imported ${importedCount} schools from school65.xlsx (Bulk Optimization)`,
         );
       } catch (error) {
         console.error('Error importing Excel file:', error);
       }
     } else {
       console.log(
-        'school65.xlsx not found in any common location. Please place it in the backend root folder.',
+        'school65.xlsx not found. Skipping auto-import.',
       );
     }
   }
