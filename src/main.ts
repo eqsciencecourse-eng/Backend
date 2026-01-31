@@ -33,7 +33,6 @@ async function bootstrap() {
   // Middleware to set Cross-Origin-Opener-Policy for Google Login Popup
   app.use((req: any, res: any, next: any) => {
     res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
-    res.header('Cross-Origin-Embedder-Policy', 'require-corp');
     next();
   });
 
