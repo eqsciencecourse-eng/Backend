@@ -24,11 +24,23 @@ async function bootstrap() {
    * Wildcards (*) are NOT allowed when credentials: true.
    */
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) { // Also allow preview deployments
+        callback(null, true);
+      } else {
+        console.warn(`Blocked by CORS: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-    exposedHeaders: ['Set-Cookie'], // Allow frontend to see cookies if needed
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With, Origin, Access-Control-Allow-Origin',
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+    exposedHeaders: ['Set-Cookie'],
   });
 
   // Middleware to set Cross-Origin-Opener-Policy for Google Login Popup
