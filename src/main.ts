@@ -32,12 +32,13 @@ async function bootstrap() {
         callback(null, true);
       } else {
         console.warn(`Blocked by CORS: ${origin}`);
-        callback(new Error('Not allowed by CORS'));
+        // Avoid throwing error to prevent 502 crashes, just disable CORS for this request
+        callback(null, false);
       }
     },
     credentials: true,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With, Origin, Access-Control-Allow-Origin',
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-Requested-With', 'Origin', 'Access-Control-Allow-Origin'],
     preflightContinue: false,
     optionsSuccessStatus: 204,
     exposedHeaders: ['Set-Cookie'],
