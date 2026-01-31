@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
@@ -37,7 +38,6 @@ async function bootstrap() {
   });
 
   // Increase payload limit
-  const { json, urlencoded } = require('express');
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ extended: true, limit: '50mb' }));
 
@@ -60,8 +60,8 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
 
   const port = process.env.PORT || 4000;
-  await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
+  await app.listen(port, '0.0.0.0');
+  console.log(`Application is running on: http://0.0.0.0:${port}`);
   console.log(`CORS enabled for origins: ${allowedOrigins.join(', ')}`);
   console.log('🚀 Server Starting... (Excel Auto-Import DISABLED - MANUAL API MODE) 🚀');
   console.log('--- FORCE DEPLOY: FIXED CORS CRASH ---');
