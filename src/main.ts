@@ -18,16 +18,23 @@ async function bootstrap() {
   ];
 
   /* 
-   * NOTE: We removed process.env.ALLOWED_ORIGINS to prevent 502 Crash 
-   * caused by malformed Env Vars on Railway. 
-   * This hardcoded list effectively allows all needed domains.
+   * NOTE: CORS Configuration
+   * We use a whitelist to allow specific domains with credentials.
+   * Wildcards (*) are NOT allowed when credentials: true.
    */
-
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    exposedHeaders: ['Set-Cookie'], // Allow frontend to see cookies if needed
+  });
+
+  // Middleware to set Cross-Origin-Opener-Policy for Google Login Popup
+  app.use((req, res, next) => {
+    res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    res.header('Cross-Origin-Embedder-Policy', 'require-corp');
+    next();
   });
 
   // Increase payload limit
