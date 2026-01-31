@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards, Options } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -8,7 +8,7 @@ import { User } from '../users/schemas/user.schema';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('register')
   register(@Body() payload: RegisterDto) {
@@ -23,6 +23,11 @@ export class AuthController {
   @Post('google-login')
   googleLogin(@Body('token') token: string) {
     return this.authService.googleLogin(token);
+  }
+
+  @Options('google-login')
+  optionsGoogleLogin() {
+    return 'OK';
   }
 
   @Post('google-register')
