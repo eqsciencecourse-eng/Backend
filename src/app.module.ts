@@ -32,9 +32,15 @@ import { LineModule } from './line/line.module';
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI'),
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const uri = configService.get<string>('MONGODB_URI');
+        console.log(`[Mongo] Connecting to: ${uri?.split('@')[1] || 'Unknown Host'}...`); // Log host only for safety
+        return {
+          uri,
+          serverSelectionTimeoutMS: 5000, // Timeout after 5s if can't connect
+          socketTimeoutMS: 45000,
+        };
+      },
       inject: [ConfigService],
     }),
     FirebaseModule,

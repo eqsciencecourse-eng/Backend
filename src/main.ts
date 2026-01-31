@@ -11,26 +11,17 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     console.log('NestFactory created application.');
 
-    // Enable CORS
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://192.168.3.88:3000',
-      'https://eqsciencecom.vercel.app',
-      'https://eq-app-72f5b.web.app',
-      'https://eq-app-72f5b.firebaseapp.com'
-    ];
+    // DEBUG: Log every request to see if it reaches the app
+    app.use((req: any, res: any, next: any) => {
+      console.log(`[INCOMING REQUEST] ${req.method} ${req.url} | Origin: ${req.headers.origin}`);
+      next();
+    });
 
+    // Enable CORS - Permissive Debug Mode
     app.enableCors({
       origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
-          // console.log(`Allowed CORS for: ${origin}`);
-          callback(null, true);
-        } else {
-          console.warn(`Blocked by CORS: ${origin}`);
-          callback(null, false);
-        }
+        console.log(`[CORS CHECK] Origin: ${origin}`);
+        callback(null, true); // ALLOW ALL FOR DEBUGGING
       },
       credentials: true,
       methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
@@ -39,7 +30,7 @@ async function bootstrap() {
       optionsSuccessStatus: 204,
       exposedHeaders: ['Set-Cookie'],
     });
-    console.log('CORS Enabled.');
+    console.log('CORS Enabled (Permissive Mode).');
 
     app.use((req: any, res: any, next: any) => {
       res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
@@ -64,7 +55,7 @@ async function bootstrap() {
     // Use PORT from environment or default to 4000
     // Railway provides the PORT environment variable.
     const port = parseInt(process.env.PORT || '4000', 10);
-    const host = '0.0.0.0'; // IMPORTANT for Docker/Railway
+    const host = '0.0.0.0';
 
     console.log(`Attempting to listen on ${host}:${port}...`);
 
