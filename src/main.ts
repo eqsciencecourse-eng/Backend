@@ -29,6 +29,7 @@ async function bootstrap() {
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) { // Also allow preview deployments
+        // console.log(`Allowed CORS for: ${origin}`);
         callback(null, true);
       } else {
         console.warn(`Blocked by CORS: ${origin}`);
@@ -72,11 +73,15 @@ async function bootstrap() {
   // Global Exception Filter - จัดการ errors แบบสม่ำเสมอ
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  const port = process.env.PORT || 4000;
+  // Use PORT from environment or default to 4000
+  // Railway provides the PORT environment variable.
+  const port = parseInt(process.env.PORT || '4000', 10);
+
   await app.listen(port, '0.0.0.0');
+
   console.log(`Application is running on: http://0.0.0.0:${port}`);
   console.log(`CORS enabled for origins: ${allowedOrigins.join(', ')}`);
   console.log('🚀 Server Starting... (Excel Auto-Import DISABLED - MANUAL API MODE) 🚀');
-  console.log('--- FORCE DEPLOY: FIXED CORS CRASH ---');
+  console.log(`--- FORCE DEPLOY: FIXED CORS CRASH (Port: ${port}) ---`);
 }
 bootstrap();
