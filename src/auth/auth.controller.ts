@@ -25,10 +25,7 @@ export class AuthController {
     return this.authService.googleLogin(token);
   }
 
-  @Options('google-login')
-  optionsGoogleLogin() {
-    return 'OK';
-  }
+
 
   @Post('google-register')
   googleRegister(@Body() body: { token: string; payload: RegisterDto }) {
