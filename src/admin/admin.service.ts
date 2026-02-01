@@ -3,10 +3,10 @@ import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   async findAllUsers() {
-    return this.usersService.findAll();
+    return this.usersService.findAllForAdmin();
   }
 
   async findPendingTeachers() {

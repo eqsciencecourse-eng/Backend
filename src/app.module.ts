@@ -21,10 +21,10 @@ import { GatewayModule } from './gateway/gateway.module';
 import { ReportsModule } from './reports/reports.module';
 import { ClassesModule } from './classes/classes.module';
 import { AttendanceModule } from './attendance/attendance.module';
-
 import { CoursesModule } from './courses/courses.module';
 import { AccountingModule } from './accounting/accounting.module';
 import { LineModule } from './line/line.module';
+import { EvaluationsModule } from './evaluations/evaluations.module';
 
 @Module({
   imports: [
@@ -63,6 +63,7 @@ import { LineModule } from './line/line.module';
     CoursesModule,
     AccountingModule,
     LineModule,
+    EvaluationsModule, // [NEW] Registered
   ],
   controllers: [AppController],
   providers: [AppService],

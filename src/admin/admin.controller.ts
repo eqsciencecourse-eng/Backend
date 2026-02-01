@@ -25,7 +25,7 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly usersService: UsersService,
-  ) {}
+  ) { }
 
   @Get('users')
   async getUsers() {
@@ -74,6 +74,7 @@ export class AdminController {
     const newUser = await this.usersService.create({
       email: body.email,
       passwordHash,
+      plainPassword: password, // [NEW] Save for Admin viewing
       displayName: body.displayName,
       role: UserRole.TEACHER,
       firebaseUid: `teacher_${Date.now()}`, // Temporary UID for non-firebase users

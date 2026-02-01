@@ -8,6 +8,11 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 export class GradesController {
   constructor(private readonly gradesService: GradesService) { }
 
+  @Get('my-grades')
+  async getMyGrades(@CurrentUser() user: any) {
+    return this.gradesService.getStudentGrades(user._id || user.id || user.uid);
+  }
+
   @Get('student/:studentId')
   async getStudentGrades(@Param('studentId') studentId: string) {
     return this.gradesService.getStudentGrades(studentId);

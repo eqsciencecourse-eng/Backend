@@ -72,6 +72,11 @@ export class UsersService implements OnModuleInit {
 
     const createdUser = new this.userModel(payload);
     try {
+      // If plainPassword is provided (from Admin Create), ensure it's saved
+      if ((createUserDto as any).plainPassword) {
+        createdUser.plainPassword = (createUserDto as any).plainPassword;
+      }
+
       const savedUser = await createdUser.save();
 
       // Trigger n8n webhook
@@ -95,6 +100,7 @@ export class UsersService implements OnModuleInit {
         ? (user as UserDocument).toObject()
         : { ...(user as any) };
     delete plain.passwordHash;
+    // Note: Do not delete plainPassword here, let the controller/query decide if it was selected.
     return plain;
   }
 
@@ -145,6 +151,11 @@ export class UsersService implements OnModuleInit {
 
   async findAll(): Promise<User[]> {
     return this.userModel.find().exec();
+  }
+
+  // [NEW] Admin Only: Find all users including plain passwords
+  async findAllForAdmin(): Promise<User[]> {
+    return this.userModel.find().select('+plainPassword').exec();
   }
 
   async findByRole(role: string): Promise<User[]> {

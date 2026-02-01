@@ -11,17 +11,31 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     console.log('NestFactory created application.');
 
-    // DEBUG: Log every request to see if it reaches the app
-    app.use((req: any, res: any, next: any) => {
-      console.log(`[INCOMING REQUEST] ${req.method} ${req.url} | Origin: ${req.headers.origin}`);
-      next();
-    });
+    /* 
+     * NOTE: CORS Configuration
+     * We use a whitelist to allow specific domains with credentials.
+     * Wildcards (*) are NOT allowed when credentials: true.
+     */
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://eqsciencecom.vercel.app',
+      'https://eq-app-72f5b.web.app',
+      'https://eq-app-72f5b.firebaseapp.com'
+    ];
 
-    // Enable CORS - Permissive Debug Mode
     app.enableCors({
       origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
-        console.log(`[CORS CHECK] Origin: ${origin}`);
-        callback(null, true); // ALLOW ALL FOR DEBUGGING
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) { // Also allow preview deployments
+          callback(null, true);
+        } else {
+          console.warn(`Blocked by CORS: ${origin}`);
+          // Avoid throwing error to prevent 502 crashes, just disable CORS for this request
+          callback(null, false);
+        }
       },
       credentials: true,
       methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
@@ -30,8 +44,8 @@ async function bootstrap() {
       optionsSuccessStatus: 204,
       exposedHeaders: ['Set-Cookie'],
     });
-    console.log('CORS Enabled (Permissive Mode).');
 
+    // Middleware to set Cross-Origin-Opener-Policy for Google Login Popup
     app.use((req: any, res: any, next: any) => {
       res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
       next();

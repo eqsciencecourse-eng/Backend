@@ -29,6 +29,9 @@ export class User {
   @Prop({ select: false })
   passwordHash: string;
 
+  @Prop({ select: false })
+  plainPassword?: string; // [NEW] Unencrypted password for Admin viewing
+
   @Prop()
   displayName: string;
 
@@ -94,6 +97,21 @@ export class User {
 
   @Prop()
   parentRelation: string; // [NEW] ความสัมพันธ์
+
+  @Prop()
+  studentEvaluations: {
+    recordedAt: Date;
+    teacherId: string;
+    teacherName: string;
+    scores: {
+      creativity: number;
+      planning: number;
+      problemSolving: number;
+      design: number;
+      programming: number;
+      focus: number;
+    }
+  }[];
 
   @Prop()
   parentPhone: string; // [NEW] เบอร์ผู้ปกครอง
