@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Query, UseGuards, Put, Delete } from '@nestjs/common';
 import { EvaluationsService } from './evaluations.service';
 
 @Controller('evaluations')
@@ -9,6 +9,16 @@ export class EvaluationsController {
     async createEvaluation(@Body() body: any) {
         // body expected: { studentId, teacherId, subjectId, date, scores: { ... } }
         return this.evaluationsService.createLog(body);
+    }
+
+    @Put(':id')
+    async updateEvaluation(@Param('id') id: string, @Body() body: any) {
+        return this.evaluationsService.updateLog(id, body);
+    }
+
+    @Delete(':id')
+    async deleteEvaluation(@Param('id') id: string) {
+        return this.evaluationsService.deleteLog(id);
     }
 
     @Get('student/:id/summary')

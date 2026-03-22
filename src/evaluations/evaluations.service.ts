@@ -20,6 +20,14 @@ export class EvaluationsService {
         return this.evaluationLogModel.find(query).sort({ date: -1 }).exec();
     }
 
+    async updateLog(id: string, data: any) {
+        return this.evaluationLogModel.findByIdAndUpdate(id, data, { new: true }).exec();
+    }
+
+    async deleteLog(id: string) {
+        return this.evaluationLogModel.findByIdAndDelete(id).exec();
+    }
+
     async getStudentSummary(studentId: string) {
         // Aggregate all logs to calculate averages and totals
         const logs = await this.evaluationLogModel.find({ studentId }).exec();

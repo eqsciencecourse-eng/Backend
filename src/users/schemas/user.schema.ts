@@ -225,7 +225,7 @@ export class User {
         level: { type: String, enum: ['Basic', 'Intermediate', 'Advanced'], default: 'Basic' }, // [NEW] Student Level
         totalSessions: { type: Number, default: 0 },
         usedSessions: { type: Number, default: 0 },
-        status: { type: String, enum: ['active', 'drop', 'graduated', 'resigned'], default: 'active' }, // [NEW] Per-course status
+        status: { type: String, enum: ['active', 'drop', 'graduated', 'resigned', 'expired'], default: 'active' }, // [NEW] Per-course status
         extensionHistory: {
           type: [{
             extendedAt: { type: Date, default: Date.now },
