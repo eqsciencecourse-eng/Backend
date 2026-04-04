@@ -24,10 +24,14 @@ import { UserRole } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { BatchAttendanceDto } from './dto/batch-attendance.dto';
 import * as bcrypt from 'bcryptjs';
+import { FirebaseService } from '../firebase/firebase.service';
 
 @Controller('users') // Assuming a controller class named UsersController
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly firebaseService: FirebaseService
+  ) { }
 
   @Get('test-connection')
   testConnection() {
@@ -87,10 +91,24 @@ export class UsersController {
   @Roles(UserRole.ADMIN)
   async create(@Body() createUserDto: CreateUserDto) {
     console.log('Received Create Request:', createUserDto);
+    
+    let rawPassword = null;
     if (createUserDto.passwordHash) {
-      createUserDto.passwordHash = await bcrypt.hash(createUserDto.passwordHash, 12);
+      rawPassword = createUserDto.passwordHash;
+      (createUserDto as any).plainPassword = rawPassword;
+      createUserDto.passwordHash = await bcrypt.hash(rawPassword, 12);
     }
-    return this.usersService.create(createUserDto);
+    
+    const newUser = await this.usersService.create(createUserDto);
+    
+    // Explicitly attach for frontend right after creation
+    if (rawPassword && newUser) {
+       (newUser as any).plainPassword = rawPassword;
+    }
+    
+    // We don't necessarily update Firebase Auth here since firebaseUid is often newly generated, 
+    // but if the Admin creates a user explicitly intended for Firebase Auth email/pass sync, they should use Reset Password once configured.
+    return newUser;
   }
 
   @Get('students')
@@ -104,7 +122,7 @@ export class UsersController {
   @UseGuards(RequireAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   async findAll() {
-    return this.usersService.findAll();
+    return this.usersService.findAllForAdmin();
   }
 
   @Get('pending-teachers')
@@ -175,12 +193,35 @@ export class UsersController {
     const user = await this.usersService.findOne(id);
     if (!user) throw new BadRequestException('User not found');
 
-    // [FIX] Hash password if it is being updated
+    // [FIX] Sync password securely to Firebase Auth and save the plaintext for admin view
+    let rawPassword = null;
     if (updateData.passwordHash) {
-      updateData.passwordHash = await bcrypt.hash(updateData.passwordHash, 12);
+      rawPassword = updateData.passwordHash;
+      updateData.plainPassword = rawPassword; // Save plain version for Admin viewing
+      
+      // Sync it to Firebase Auth immediately so user can log in with Email/Password if applicable!
+      try {
+         if (user.firebaseUid) {
+             await this.firebaseService.getAuth().updateUser(user.firebaseUid, {
+                 password: rawPassword
+             });
+         }
+      } catch (fbErr) {
+         console.warn("[UsersController] Failed to sync password to Firebase:", fbErr.message);
+      }
+      
+      updateData.passwordHash = await bcrypt.hash(rawPassword, 12);
     }
 
-    return this.usersService.update(id, updateData);
+    const updated = await this.usersService.update(id, updateData);
+    
+    // Explicitly attach the plain password to the response if it was just changed!
+    // This allows the frontend to immediately show the new password without needing to F5.
+    if (rawPassword && updated) {
+       (updated as any).plainPassword = rawPassword;
+    }
+    
+    return updated;
   }
 
   @Patch(':id/extend-course/:index')
