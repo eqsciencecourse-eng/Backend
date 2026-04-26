@@ -66,4 +66,22 @@ export class GradesController {
   async updateSheetData(@Body() body: { studentId: string; subjectId: string; sheetName: string; data: any }) {
     return this.gradesService.updateSheetData(body.studentId, body.subjectId, body.sheetName, body.data);
   }
+
+  @Post('finalize')
+  async finalizeGrade(@Body() body: {
+    studentId: string;
+    subjectId: string;
+    subjectName: string;
+    finalGrade: string;
+    teacherRemark: string;
+  }, @CurrentUser() user: any) {
+    return this.gradesService.finalizeGrade(
+      body.studentId,
+      body.subjectId,
+      body.subjectName,
+      body.finalGrade,
+      body.teacherRemark,
+      user._id || user.id
+    );
+  }
 }

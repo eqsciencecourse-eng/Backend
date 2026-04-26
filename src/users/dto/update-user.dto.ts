@@ -14,6 +14,7 @@ export class UpdateUserDto {
   studyTimes?: string[];
   registeredClasses?: { className: string; classTime: string; }[];
   username?: string;
+  citizenId?: string;
   passwordHash?: string;
   statusNote?: string;
   startDate?: Date;

@@ -157,4 +157,25 @@ export class GradesService {
     grade.markModified('sheets');
     return grade.save();
   }
+
+  async finalizeGrade(studentId: string, subjectId: string, subjectName: string, finalGrade: string, remark: string, teacherId: string) {
+    let grade = await this.gradeModel.findOne({ studentId, subjectId });
+
+    if (!grade) {
+      grade = new this.gradeModel({
+        studentId,
+        subjectId,
+        subjectName,
+        teacherId,
+        sheets: []
+      });
+    }
+
+    grade.isComplete = true;
+    grade.finalGrade = finalGrade;
+    grade.teacherRemark = remark;
+    grade.certificateIssuedAt = new Date();
+
+    return grade.save();
+  }
 }

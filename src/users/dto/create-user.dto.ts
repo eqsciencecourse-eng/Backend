@@ -45,6 +45,7 @@ export class CreateUserDto {
   studentName?: string;
 
   // [NEW] Student Registry Fields
+  @IsString() @IsOptional() citizenId?: string; // เลขบัตรประชาชน
   @IsString() @IsOptional() studentIdMap?: string;
   @IsString() @IsOptional() prefix?: string;
   @IsString() @IsOptional() firstName?: string;

@@ -43,6 +43,15 @@ export class Grade {
 
   @Prop()
   totalScore: number;
+
+  @Prop()
+  teacherRemark: string;
+
+  @Prop()
+  certificateURL: string;
+
+  @Prop()
+  certificateIssuedAt: Date;
 }
 
 export const GradeSchema = SchemaFactory.createForClass(Grade);

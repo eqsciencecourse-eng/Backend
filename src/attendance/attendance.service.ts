@@ -224,9 +224,17 @@ export class AttendanceService implements OnModuleInit {
     }
 
     async findByStudentId(studentId: string): Promise<Attendance[]> {
-        return this.attendanceModel.find({
-            'students.studentId': studentId,
-        }).sort({ date: -1 }).exec();
+        const query: any = { 'students.studentId': studentId };
+        
+        if (Types.ObjectId.isValid(studentId)) {
+            query.$or = [
+                { 'students.studentId': studentId },
+                { 'students.studentId': new Types.ObjectId(studentId) }
+            ];
+            delete query['students.studentId'];
+        }
+
+        return this.attendanceModel.find(query).sort({ date: -1 }).exec();
     }
 
     async recalculateAllQuotas(): Promise<any> {
@@ -452,6 +460,7 @@ export class AttendanceService implements OnModuleInit {
             // Case 1: Delete specific student
             const studentIdx = attendance.students.findIndex(s => s.studentId.toString() === studentId);
             if (studentIdx === -1) {
+                console.warn(`[Delete] Student ${studentId} not found in attendance record ${id}`);
                 // If student not found, maybe they were already deleted? Just return.
                 return;
             }

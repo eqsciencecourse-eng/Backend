@@ -702,18 +702,19 @@ export class UsersService implements OnModuleInit {
             note: record.note || '',
             checkInTime: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
           });
-          // Update Quota
-          if (record.status === 'present') {
+          // Update Quota (present, leave_video, online will deduct 1 session)
+          if (record.status === 'present' || record.status === 'leave_video' || record.status === 'online') {
             course.usedSessions = (course.usedSessions || 0) + 1;
           }
         } else {
-          // Update existing
-          // If changing FROM present TO absent -> decrease
-          if (existingHistory.status === 'present' && record.status !== 'present') {
+          // Update existing quota deduction on status change
+          const deductStatuses = ['present', 'leave_video', 'online'];
+          const wasDeducted = deductStatuses.includes(existingHistory.status);
+          const isDeducted = deductStatuses.includes(record.status);
+
+          if (wasDeducted && !isDeducted) {
             course.usedSessions = Math.max(0, (course.usedSessions || 0) - 1);
-          }
-          // If changing FROM absent TO present -> increase
-          else if (existingHistory.status !== 'present' && record.status === 'present') {
+          } else if (!wasDeducted && isDeducted) {
             course.usedSessions = (course.usedSessions || 0) + 1;
           }
           existingHistory.status = record.status;
@@ -735,7 +736,9 @@ export class UsersService implements OnModuleInit {
           nickname: user.nickname,
           status: record.status === 'present' ? 'Present' :
             record.status === 'late' ? 'Late' :
-              record.status === 'leave' ? 'Leave' : 'Absent',
+              record.status === 'leave' ? 'Leave' : 
+                record.status === 'leave_video' ? 'Leave/Video' :
+                  record.status === 'online' ? 'Online' : 'Absent',
           leaveType: '',
           time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
           classPeriod: '', // Not specified in batch

@@ -24,6 +24,9 @@ export class User {
   username?: string;
 
   @Prop({ unique: true, sparse: true })
+  citizenId?: string; // [NEW] เลขบัตรประชาชน
+
+  @Prop({ unique: true, sparse: true })
   lineUserId?: string; // [NEW] Line Messaging API User ID
 
   @Prop({ select: false })
@@ -236,10 +239,10 @@ export class User {
           }],
           default: []
         },
-        attendanceHistory: {
+          attendanceHistory: {
           type: [{
             date: { type: Date, default: Date.now },
-            status: { type: String, enum: ['present', 'absent', 'sick', 'leave'], default: 'present' },
+            status: { type: String, enum: ['present', 'absent', 'sick', 'leave', 'leave_video', 'online'], default: 'present' },
             note: { type: String, default: '' },
             checkInTime: { type: String, default: '' } // HH:MM
           }],

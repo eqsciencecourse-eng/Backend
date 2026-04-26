@@ -24,7 +24,7 @@ export class Attendance {
             firstName: { type: String, required: true },
             lastName: { type: String, required: true },
             nickname: String,
-            status: { type: String, enum: ['Present', 'Late', 'Leave', 'Absent'], required: true },
+            status: { type: String, enum: ['Present', 'Late', 'Leave', 'Absent', 'Leave/Video', 'Online'], required: true },
             leaveType: String, // Sick, Business, etc.
             time: String, // HH:MM
             classPeriod: String,

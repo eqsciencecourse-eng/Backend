@@ -51,6 +51,13 @@ export class AttendanceController {
 
     @UseGuards(RequireAuthGuard, RolesGuard)
     @Roles(UserRole.TEACHER, UserRole.ADMIN)
+    @Get('student/:id')
+    getStudentHistory(@Param('id') id: string) {
+        return this.attendanceService.findByStudentId(id);
+    }
+
+    @UseGuards(RequireAuthGuard, RolesGuard)
+    @Roles(UserRole.TEACHER, UserRole.ADMIN)
     @Post('qr/generate')
     generateQr(@Body() body: { subjectId: string; subjectName: string; date: string; time: string }, @Request() req: any) {
         return this.attendanceService.generateQrToken({

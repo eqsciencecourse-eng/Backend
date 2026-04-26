@@ -6,7 +6,7 @@ class AttendanceRecord {
     @IsNotEmpty()
     studentId: string;
 
-    @IsEnum(['present', 'absent', 'sick', 'leave'])
+    @IsEnum(['present', 'absent', 'sick', 'leave', 'leave_video', 'online'])
     status: string;
 
     @IsString()
