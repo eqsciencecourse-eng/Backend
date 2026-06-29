@@ -16,11 +16,12 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { AccountingService } from './accounting.service';
 import { diskStorage } from 'multer';
 import { RequireAuthGuard } from '../auth/guards/auth.guard';
+import { AccountingAccessGuard } from '../auth/guards/accounting-access.guard';
 import * as xlsx from 'xlsx';
 import { extname } from 'path';
 
 @Controller('accounting')
-@UseGuards(RequireAuthGuard)
+@UseGuards(RequireAuthGuard, AccountingAccessGuard)
 export class AccountingController {
     constructor(private readonly accountingService: AccountingService) { }
 

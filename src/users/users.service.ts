@@ -28,6 +28,28 @@ export class UsersService implements OnModuleInit {
     await this.backfillStudentIds();
   }
 
+  async getLastStudentId(): Promise<{ studentId: string | null; runningNumber: number | null; registrationYear: number | null }> {
+    const currentYearAD = new Date().getFullYear();
+    const currentYearBE = currentYearAD + 543;
+    const yearShort = currentYearBE % 100;
+
+    const lastUser = await this.userModel
+      .findOne({ role: UserRole.STUDENT, registrationYear: yearShort })
+      .sort({ runningNumber: -1 })
+      .select('studentId runningNumber registrationYear')
+      .exec();
+
+    if (lastUser && lastUser.studentId) {
+      return {
+        studentId: lastUser.studentId,
+        runningNumber: lastUser.runningNumber,
+        registrationYear: lastUser.registrationYear,
+      };
+    }
+
+    return { studentId: null, runningNumber: null, registrationYear: null };
+  }
+
   // [NEW] Generate Auto-ID (e.g. 1/69)
   async generateStudentId(): Promise<{ studentId: string; runningNumber: number; registrationYear: number }> {
     const currentYearAD = new Date().getFullYear();
@@ -68,6 +90,17 @@ export class UsersService implements OnModuleInit {
       payload.studentId = idData.studentId;
       payload.runningNumber = idData.runningNumber;
       payload.registrationYear = idData.registrationYear;
+    } else {
+      // Format manual studentId (e.g. "791" -> "791/69")
+      const currentYearAD = new Date().getFullYear();
+      const currentYearBE = currentYearAD + 543;
+      const yearShort = currentYearBE % 100;
+
+      if (!payload.studentId.includes('/')) {
+        payload.studentId = `${payload.studentId}/${yearShort}`;
+      }
+      payload.runningNumber = parseInt(payload.studentId.split('/')[0], 10);
+      payload.registrationYear = parseInt(payload.studentId.split('/')[1], 10) || yearShort;
     }
 
     const createdUser = new this.userModel(payload);
@@ -85,7 +118,17 @@ export class UsersService implements OnModuleInit {
       return savedUser;
     } catch (error: any) {
       if (error.code === 11000) {
-        throw new ConflictException('USERNAME_ALREADY_EXISTS');
+        const keyPattern = error.keyPattern || {};
+        if (keyPattern.studentId) {
+          throw new ConflictException('STUDENT_ID_ALREADY_EXISTS');
+        }
+        if (keyPattern.citizenId) {
+          throw new ConflictException('CITIZEN_ID_ALREADY_EXISTS');
+        }
+        if (keyPattern.username) {
+          throw new ConflictException('USERNAME_ALREADY_EXISTS');
+        }
+        throw new ConflictException('DUPLICATE_FIELD');
       }
       throw error;
     }
@@ -644,6 +687,58 @@ export class UsersService implements OnModuleInit {
     }
 
     return { count: users.length, message: `Resequenced ${users.length} students for year ${targetYear}` };
+  }
+
+  async cleanupOrphanedData(): Promise<{ cleaned: number; message: string }> {
+    let cleaned = 0;
+
+    // 1. Fix users with studentId but no runningNumber
+    const usersWithoutRunning = await this.userModel.find({
+      role: UserRole.STUDENT,
+      studentId: { $exists: true, $ne: null },
+      $or: [
+        { runningNumber: { $exists: false } },
+        { runningNumber: null },
+        { registrationYear: { $exists: false } },
+        { registrationYear: null },
+      ]
+    }).exec();
+
+    for (const user of usersWithoutRunning) {
+      const parsed = user.studentId?.match(/^(\d+)\/(\d+)$/);
+      if (parsed) {
+        user.runningNumber = parseInt(parsed[1], 10);
+        user.registrationYear = parseInt(parsed[2], 10);
+        await user.save();
+        cleaned++;
+      }
+    }
+
+    // 2. Find duplicate studentIds and fix them
+    const duplicates = await this.userModel.aggregate([
+      { $match: { role: UserRole.STUDENT, studentId: { $ne: null } } },
+      { $group: { _id: '$studentId', ids: { $push: '$_id' }, count: { $sum: 1 } } },
+      { $match: { count: { $gt: 1 } } }
+    ]).exec();
+
+    for (const dup of duplicates) {
+      // Keep the first one, reassign the rest
+      const [keepId, ...fixIds] = dup.ids;
+      for (const id of fixIds) {
+        const idData = await this.generateStudentId();
+        await this.userModel.findByIdAndUpdate(id, {
+          studentId: idData.studentId,
+          runningNumber: idData.runningNumber,
+          registrationYear: idData.registrationYear,
+        });
+        cleaned++;
+      }
+    }
+
+    return {
+      cleaned,
+      message: `แก้ไขข้อมูลแล้ว ${cleaned} รายการ`
+    };
   }
 
   async updateBatchAttendance(dto: BatchAttendanceDto): Promise<{ success: boolean; updatedCount: number; errors: any[] }> {

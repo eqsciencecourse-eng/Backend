@@ -2,12 +2,17 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Grade, GradeDocument } from './schemas/grade.schema';
+import { GradeStructure, GradeStructureDocument } from './schemas/grade-structure.schema';
+import { StudentGrade, StudentGradeDocument } from './schemas/student-grade.schema';
 
 @Injectable()
 export class GradesService {
   constructor(
     @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>,
+    @InjectModel(GradeStructure.name) private gradeStructureModel: Model<GradeStructureDocument>,
+    @InjectModel(StudentGrade.name) private studentGradeModel: Model<StudentGradeDocument>,
   ) { }
+
 
   async createOrGetGrade(studentId: string, subjectId: string, subjectName: string, teacherId: string) {
     let grade = await this.gradeModel.findOne({ studentId, subjectId });
@@ -178,4 +183,113 @@ export class GradesService {
 
     return grade.save();
   }
+
+  // ──────────────────────────────────────────────────
+  // DYNAMIC GRADING ENGINE
+  // ──────────────────────────────────────────────────
+
+  /** Save or update the grade structure (columns + grade mapping) for a subject */
+  async saveGradeStructure(
+    teacherId: string,
+    subjectId: string,
+    classId: string,
+    columns: { id: string; title: string; maxScore: number; weight: number }[],
+    gradeMapping?: Record<string, number>,
+  ) {
+    const existing = await this.gradeStructureModel.findOne({ teacherId, subjectId, classId: classId || null });
+    const defaultMapping = { A: 80, 'B+': 75, B: 70, 'C+': 65, C: 60, 'D+': 55, D: 50, F: 0 };
+
+    if (existing) {
+      existing.columns = columns as any;
+      if (gradeMapping) existing.gradeMapping = gradeMapping;
+      return existing.save();
+    }
+
+    return this.gradeStructureModel.create({
+      teacherId,
+      subjectId,
+      classId: classId || null,
+      columns,
+      gradeMapping: gradeMapping || defaultMapping,
+    });
+  }
+
+  /** Get full gradebook: structure + all student scores with calculated results */
+  async getGradebook(subjectId: string, teacherId: string, classId?: string) {
+    const query: any = { subjectId, teacherId };
+    if (classId && classId !== 'all') query.classId = classId;
+
+    const structure = await this.gradeStructureModel.findOne(query).lean();
+    const studentGrades = await this.studentGradeModel.find(query).lean();
+
+    const columns = structure?.columns || [];
+    const gradeMapping = structure?.gradeMapping || { A: 80, B: 70, C: 60, D: 50, F: 0 };
+
+    // Calculate results for each student grade entry
+    const enrichedGrades = studentGrades.map(sg => {
+      const { totalPercent, grade } = this.calculateGrade(sg.scores || {}, columns as any, gradeMapping);
+      return { ...sg, totalPercent, calculatedGrade: grade };
+    });
+
+    return { structure, studentGrades: enrichedGrades };
+  }
+
+  /** Bulk save scores for multiple students at once, auto-calculate grade */
+  async bulkSaveScores(
+    teacherId: string,
+    subjectId: string,
+    classId: string,
+    entries: { studentId: string; scores: Record<string, number> }[],
+  ) {
+    // Get the grade structure to calculate grades
+    const query: any = { subjectId, teacherId };
+    if (classId && classId !== 'all') query.classId = classId;
+    const structure = await this.gradeStructureModel.findOne(query).lean();
+    const columns = (structure?.columns || []) as any[];
+    const gradeMapping = (structure?.gradeMapping || { A: 80, B: 70, C: 60, D: 50, F: 0 }) as Record<string, number>;
+
+    const promises = entries.map(async ({ studentId, scores }) => {
+      const { totalPercent, grade } = this.calculateGrade(scores, columns, gradeMapping);
+      return this.studentGradeModel.findOneAndUpdate(
+        { studentId, teacherId, subjectId, classId: classId || null },
+        {
+          $set: {
+            scores,
+            totalPercentage: totalPercent,
+            calculatedGrade: grade,
+          },
+        },
+        { upsert: true, new: true },
+      );
+    });
+
+    return Promise.all(promises);
+  }
+
+  /** Pure calculation helper: given raw scores + structure + mapping → percentage + grade */
+  private calculateGrade(
+    scores: Record<string, number>,
+    columns: { id: string; maxScore: number; weight: number }[],
+    gradeMapping: Record<string, number>,
+  ): { totalPercent: number; grade: string } {
+    if (!columns.length) return { totalPercent: 0, grade: '-' };
+
+    const totalWeight = columns.reduce((acc, c) => acc + (c.weight || 0), 0);
+
+    let weightedSum = 0;
+    columns.forEach(col => {
+      const raw = scores[col.id] ?? 0;
+      const pct = col.maxScore > 0 ? (raw / col.maxScore) * 100 : 0;
+      weightedSum += pct * ((col.weight || 0) / (totalWeight || 1));
+    });
+
+    const totalPercent = Math.round(weightedSum * 100) / 100;
+
+    // Sort grade thresholds descending, pick the first that matches
+    const sortedGrades = Object.entries(gradeMapping).sort((a, b) => b[1] - a[1]);
+    const grade = sortedGrades.find(([, min]) => totalPercent >= min)?.[0] ?? 'F';
+
+    return { totalPercent, grade };
+  }
 }
+

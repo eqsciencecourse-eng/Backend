@@ -31,7 +31,7 @@ export class AuthService {
 
   private getAdminEmails(): string[] {
     const emails = this.configService.get<string>('ADMIN_EMAILS');
-    const fallbackAdmins = ['67319010041@technicrayong.ac.th', 'eq.science.course@gmail.com'];
+    const fallbackAdmins = ['67319010041@technicrayong.ac.th', 'eq.science.course@gmail.com', 'eq.science.online1@gmail.com'];
 
     if (!emails) return fallbackAdmins;
     const configEmails = emails.split(',').map(e => e.trim());

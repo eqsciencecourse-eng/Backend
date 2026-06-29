@@ -39,6 +39,13 @@ export class UsersController {
   }
 
   // [Moved to Top] Student Registry Endpoints
+  @Get('last-student-id')
+  @UseGuards(RequireAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getLastStudentId() {
+    return this.usersService.getLastStudentId();
+  }
+
   @Get('registry')
   @UseGuards(RequireAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -243,6 +250,13 @@ export class UsersController {
     @Body() body: { subjectName: string; level: string }
   ) {
     return this.usersService.updateCourseLevel(id, body.subjectName, body.level);
+  }
+
+  @Post('cleanup')
+  @UseGuards(RequireAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async cleanupOrphanedData() {
+    return this.usersService.cleanupOrphanedData();
   }
 
   @Post('batch-attendance')

@@ -17,6 +17,12 @@ export class EvaluationLog {
     @Prop({ required: true })
     date: Date;
 
+    @Prop({ required: false })
+    level?: string;
+
+    @Prop({ required: false })
+    subLevel?: string;
+
     @Prop({ type: Object, required: true })
     scores: {
         creativity: number;

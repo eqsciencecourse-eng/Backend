@@ -4,6 +4,8 @@ import { GradesService } from './grades.service';
 import { GradesController } from './grades.controller';
 import { GradeSummaryController } from './grades-summary.controller';
 import { Grade, GradeSchema } from './schemas/grade.schema';
+import { GradeStructure, GradeStructureSchema } from './schemas/grade-structure.schema';
+import { StudentGrade, StudentGradeSchema } from './schemas/student-grade.schema';
 import { FilesModule } from '../files/files.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { GradeSummaryService } from './grades-summary.service';
@@ -15,6 +17,8 @@ import { UsersModule } from '../users/users.module';
   imports: [
     MongooseModule.forFeature([
       { name: Grade.name, schema: GradeSchema },
+      { name: GradeStructure.name, schema: GradeStructureSchema },
+      { name: StudentGrade.name, schema: StudentGradeSchema },
       { name: User.name, schema: UserSchema },
     ]),
     AuthModule,

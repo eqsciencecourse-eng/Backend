@@ -84,4 +84,40 @@ export class GradesController {
       user._id || user.id
     );
   }
+
+  // ── Dynamic Grading Engine ─────────────────────────
+
+  /** POST /grades/structure - Create or update grade structure (columns & mapping) */
+  @Post('structure')
+  async saveStructure(@Body() body: {
+    subjectId: string;
+    classId: string;
+    columns: { id: string; title: string; maxScore: number; weight: number }[];
+    gradeMapping?: Record<string, number>;
+  }, @CurrentUser() user: any) {
+    const teacherId = user._id || user.id;
+    return this.gradesService.saveGradeStructure(teacherId, body.subjectId, body.classId, body.columns, body.gradeMapping);
+  }
+
+  /** GET /grades/gradebook/:subjectId?classId= - Get full gradebook for a subject */
+  @Get('gradebook/:subjectId')
+  async getGradebook(
+    @Param('subjectId') subjectId: string,
+    @CurrentUser() user: any,
+  ) {
+    // classId can come via query; for now extract from query string manually or use @Query
+    return this.gradesService.getGradebook(subjectId, user._id || user.id);
+  }
+
+  /** PATCH /grades/bulk-scores - Bulk save raw scores for multiple students */
+  @Patch('bulk-scores')
+  async bulkSaveScores(@Body() body: {
+    subjectId: string;
+    classId: string;
+    entries: { studentId: string; scores: Record<string, number> }[];
+  }, @CurrentUser() user: any) {
+    const teacherId = user._id || user.id;
+    return this.gradesService.bulkSaveScores(teacherId, body.subjectId, body.classId, body.entries);
+  }
 }
+
