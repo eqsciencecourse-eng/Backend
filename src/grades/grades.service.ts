@@ -163,8 +163,11 @@ export class GradesService {
     return grade.save();
   }
 
-  async finalizeGrade(studentId: string, subjectId: string, subjectName: string, finalGrade: string, remark: string, teacherId: string) {
-    let grade = await this.gradeModel.findOne({ studentId, subjectId });
+  async finalizeGrade(studentId: string, subjectId: string, subjectName: string, finalGrade: string, remark: string, teacherId: string, certificateImage?: string, level?: string, subLevel?: string) {
+    const query: any = { studentId, subjectId };
+    if (level) query.level = level;
+    if (subLevel) query.subLevel = subLevel;
+    let grade = await this.gradeModel.findOne(query);
 
     if (!grade) {
       grade = new this.gradeModel({
@@ -180,6 +183,23 @@ export class GradesService {
     grade.finalGrade = finalGrade;
     grade.teacherRemark = remark;
     grade.certificateIssuedAt = new Date();
+
+    if (level) grade.level = level;
+    if (subLevel) grade.subLevel = subLevel;
+
+    if (certificateImage) {
+      const fs = require('fs');
+      const path = require('path');
+      const uploadsDir = path.join(process.cwd(), 'uploads', 'certificates');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      const filename = `${studentId}_${subjectId}_${Date.now()}.jpg`;
+      const base64Data = certificateImage.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      fs.writeFileSync(path.join(uploadsDir, filename), buffer);
+      grade.certificateURL = filename;
+    }
 
     return grade.save();
   }
@@ -264,6 +284,32 @@ export class GradesService {
     });
 
     return Promise.all(promises);
+  }
+
+  async getAllCertificates() {
+    return this.gradeModel.find({ certificateURL: { $exists: true, $ne: null } })
+      .populate('studentId', 'displayName firstName lastName studentId')
+      .sort({ certificateIssuedAt: -1 })
+      .exec();
+  }
+
+  async removeCertificate(gradeId: string) {
+    const grade = await this.gradeModel.findById(gradeId);
+    if (!grade) throw new NotFoundException('Grade not found');
+    if (!grade.certificateURL) throw new NotFoundException('No certificate on this grade');
+
+    const fs = require('fs');
+    const path = require('path');
+    const filePath = path.join(process.cwd(), 'uploads', 'certificates', grade.certificateURL);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    grade.set('certificateURL', undefined);
+    grade.set('certificateIssuedAt', undefined);
+    grade.set('level', undefined);
+    grade.set('subLevel', undefined);
+    return grade.save();
   }
 
   /** Pure calculation helper: given raw scores + structure + mapping → percentage + grade */

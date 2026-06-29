@@ -74,6 +74,9 @@ export class GradesController {
     subjectName: string;
     finalGrade: string;
     teacherRemark: string;
+    certificateImage?: string;
+    level?: string;
+    subLevel?: string;
   }, @CurrentUser() user: any) {
     return this.gradesService.finalizeGrade(
       body.studentId,
@@ -81,7 +84,10 @@ export class GradesController {
       body.subjectName,
       body.finalGrade,
       body.teacherRemark,
-      user._id || user.id
+      user._id || user.id,
+      body.certificateImage,
+      body.level,
+      body.subLevel
     );
   }
 
@@ -118,6 +124,18 @@ export class GradesController {
   }, @CurrentUser() user: any) {
     const teacherId = user._id || user.id;
     return this.gradesService.bulkSaveScores(teacherId, body.subjectId, body.classId, body.entries);
+  }
+
+  /** GET /grades/certificates/manage - All certificates issued (for admin) */
+  @Get('certificates/manage')
+  async getAllCertificates() {
+    return this.gradesService.getAllCertificates();
+  }
+
+  /** DELETE /grades/:gradeId/certificate - Remove certificate from a grade */
+  @Delete(':gradeId/certificate')
+  async removeCertificate(@Param('gradeId') gradeId: string) {
+    return this.gradesService.removeCertificate(gradeId);
   }
 }
 

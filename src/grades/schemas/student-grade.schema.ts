@@ -39,6 +39,12 @@ export class StudentGrade {
 
   @Prop()
   certificateIssuedAt: Date;
+
+  @Prop()
+  level: string;
+
+  @Prop()
+  subLevel: string;
 }
 
 export const StudentGradeSchema = SchemaFactory.createForClass(StudentGrade);
