@@ -29,14 +29,10 @@ export class UsersService implements OnModuleInit {
   }
 
   async getLastStudentId(): Promise<{ studentId: string | null; runningNumber: number | null; registrationYear: number | null }> {
-    const currentYearAD = new Date().getFullYear();
-    const currentYearBE = currentYearAD + 543;
-    const yearShort = currentYearBE % 100;
-
     const lastUser = await this.userModel
-      .findOne({ role: UserRole.STUDENT, registrationYear: yearShort })
-      .sort({ runningNumber: -1 })
-      .select('studentId runningNumber registrationYear')
+      .findOne({ role: UserRole.STUDENT })
+      .sort({ createdAt: -1 })
+      .select('studentId runningNumber registrationYear createdAt')
       .exec();
 
     if (lastUser && lastUser.studentId) {
